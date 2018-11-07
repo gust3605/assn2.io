@@ -1,0 +1,88 @@
+#mapid { 
+	float: left;
+	height: 800px;
+	width: 60%;
+}
+
+#aq {
+    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+    
+    width: 35%;
+	float: right;
+	padding: 0px;
+}
+
+#aq td, #aq th {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+
+
+#aq tr:hover {background-color: #ddd;}
+
+#aq th {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    text-align: left;
+    background-color: #68a2ff;
+    color: white;
+}
+
+body {
+	background-color: #f2f7ff;
+}
+
+
+
+#aq table {
+	width: 76%;
+	border-collapse: collapse;
+}
+
+#aq tr:nth-child(even){background-color: #f2f7ff;}
+#aq tr:nth-child(odd){background-color: white;}
+
+#header {
+	text-align: center;
+	color: white;
+	background-color: #68a2ff;
+	font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+	padding: 1%;
+	border-radius: 25px;
+}
+
+#upd {
+	text-align: center;
+	padding: 1%;
+	background-color: #68a2ff;
+	width: 20%;
+	border-radius: 25px;
+}
+
+.box {
+	width: 36.9%;
+}
+
+#michael {
+	width: 15%;
+	background-color: #68a2ff;
+	padding: .5%;
+	border-radius: 25px;
+}
+
+#issam {
+	width: 11.25%;
+	background-color: #68a2ff;
+	padding: .5%;
+	border-radius: 25px;
+}
+
+#desc {
+	text-align: center;
+	font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+	color: white;
+	background-color: #68a2ff;
+	padding: .5%;
+	border-radius: 25px;
+}

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<link rel="stylesheet" href="aq_style.css">
+		<link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css"
+		integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA=="
+		crossorigin=""/>
+		<script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js"
+		integrity="sha512-nMMmRyTVoLYqjP9hrbed9S+FzjZHW5gY1TWCHA5ckwXZBadntCNs8kEqAWdrb9O7rxbCaA4lKTIWjDXZxflOcA=="
+		crossorigin=""></script>
+		<script src="https://cdn.jsdelivr.net/npm/vue"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.15.2/axios.js"></script>
+		<title>Project 2</title>
+	</head>
+
+
+	<body style="background-color: #f2f7ff;">
+	<div ="headdiv">
+		<h1 id="header">Air Quality - <a href="aq_about_us.html">About Us</a></h1>
+	</div>
+	<div id="upd">
+		<input id="cBox" v-model="coordinates" placeholder="Coordinates">
+		<button v-on:click="update">Update Coordinates</button>
+	</div>
+
+	<div id="mapid">
+		<script>
+			var mymap = L.map('mapid').setView([44.9537, -93.0900], 13);
+			L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+			attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+			maxZoom: 18,
+			id: 'mapbox.streets',
+			accessToken: 'pk.eyJ1IjoiYWlycXVhbGl0eSIsImEiOiJjam54bHM3MGUwMXkxM2twY3k5MjdscnUyIn0.aiQQoPg0nh7iy7U4q_Y3Sg'
+			}).addTo(mymap);
+		</script>
+	</div>
+
+	<div id="aq">
+	<table>
+		<input class="box" v-model="lowamount" placeholder="Lower value of filter ">
+		<input class="box" v-model="upamount" placeholder="upper value of filter">
+		<input class="box" v-model="fromdate" placeholder="From date">
+		<input class="box" v-model="todate" placeholder="To date">
+		<select class="box" v-model="particle" style="width:75.5%">
+			<option disabled value=''>Particle to filter by</option>
+			<option>pm25</option>
+			<option>pm10</option>
+			<option>so2</option>
+			<option>no2</option>38.27312, -98.582187
+			<option>o3</option>
+			<option>co</option>
+			<option>bc</option>
+		</select>
+		<button v-on:click="filter" style="width:75.5%">Filter</button>
+		<thead>
+		<tr>
+			<th>City</th>
+			<th>Parameter</th>
+			<th>Amount</th>
+		</tr>
+		</thead>
+		<tbody>
+			<tr v-for="result in results">
+				<td>{{ result.location }}</td>
+				<td v-if="result.measurements == undefined">{{ result.parameter }}</td>
+				<td v-else><ul><li v-for="measurements in result.measurements">{{ measurements.parameter }}</li></ul></td>
+				<td v-if="result.measurements == undefined">{{ result.value }}</td>
+				<td v-else><ul><li v-for="measurements in result.measurements">{{ measurements.value }}</li></ul></td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+
+	<script>
+		Vue.prototype.$http = axios
+		var coord = mymap.getCenter().toString();
+
+		mymap.on("moveend", function() {
+			coord = mymap.getCenter().toString();
+			placeHolder();
+		});
+
+
+		var upd = new Vue({
+			el: '#upd',
+			data: function(){
+				return {
+					coordinates: coord.replace(/L|a|t|n|g|(|)/gi, '').replace(/[()]/g, '')
+				};
+			},
+			methods: {
+				update(){
+					if(this.coordinates.charAt(0) <='9' && this.coordinates.charAt(0) <='0')
+					{
+						//splits the coordinates into latitute and longtitude
+						var latlng = this.coordinates.split(',');
+						mymap.flyTo([latlng[0], latlng[1]], mymap.zoom);
+					}
+					else
+					{
+						this.$http
+					    	.get('https://us1.locationiq.com/v1/search.php?key=102f07d934c04d&q=' + this.coordinates + '&format=json')
+            				.then(function(response){
+            				mymap.flyTo([response.data[0].lat, response.data[0].lon], mymap.zoom);
+            				})
+            				.catch(function (error) {
+							console.log(error);
+							});
+					}
+				}
+		 	}
+		})
+
+		function placeHolder() {
+			coord = coord.replace(/L|a|t|n|g|(|)/gi, '').replace(/[()]/g, '');
+			var latlng = coord.split(',');
+			var test = new Vue({
+			created() {
+			this.$http
+				.get('https://us1.locationiq.com/v1/reverse.php?key=102f07d934c04d&q=&lat=' + latlng[0] + '&lon=' + latlng[1] + '&format=json')
+			    .then(function(response){
+			     if(response.data.address.city)
+			     {
+			     	document.getElementById("cBox").value = response.data.address.city;
+			   	 }
+			   	 else
+			   	 {
+			   	 	document.getElementById("cBox").value = coord;
+			   	 }
+			     })
+			     .catch(function (error) {
+				 console.log(error);
+				 });
+			}
+			})
+			var southEast = mymap.getBounds().getSouthEast();
+			var northWest = mymap.getBounds().getNorthWest();
+			aq.update(coord, (southEast.distanceTo(northWest) / 2));
+			//placeMark();
+		}
+		//	console.log(mymap.getCenter().distanceTo(mymap.getWest()));
+
+		var up;
+		var marker = new Array();
+
+		function markerDel() {
+			for(i=0;i<marker.length;i++) {
+				mymap.removeLayer(marker[i]);
+			}
+		}
+
+		var aq = new Vue({
+        	el: '#aq',
+       		data: {
+            	results: [],
+				particle: '',
+				lowamount: '',
+				upamount: '',
+				fromdate: '',
+				todate: ''
+        	},
+        	created() {
+				var coord = mymap.getCenter().toString();
+				coord = coord.replace(/L|a|t|n|g|(|)/gi, '').replace(/[()]/g, '');
+            	this.$http
+            		.get('https://api.openaq.org/v1/latest?coordinates='+coord+'&radius=10000')
+            		.then(function(response){
+            			aq.results = response.data.results;
+						up = response.data.results;
+						var temp;
+						markerDel();
+						for(var i =0; i < aq.results.length; i++){
+							temp = L.marker([aq.results[i].coordinates.latitude,aq.results[i].coordinates.longitude]).addTo(mymap);
+							var toPop = "";
+							for(var j = 0; j < aq.results[i].measurements.length; j++) {
+								toPop = toPop+ aq.results[i].measurements[j].parameter.toString() +" = "+ aq.results[i].measurements[j].value.toString()+", ";
+							}
+							toPop = toPop.slice(0, -2);
+							temp.bindPopup(toPop);
+							temp.on('mouseover', function (e) {
+								this.openPopup();
+							});
+							temp.on('mouseout', function (e) {
+								this.closePopup();
+							});
+							marker.push(temp);
+						}
+            		})
+            		.catch(function (error) {
+						console.log(error);
+      				});
+        	},
+			methods:{
+				update(coord, radius) {
+					this.$http
+						.get('https://api.openaq.org/v1/latest?coordinates=' + coord + '&radius=' + radius)
+						.then(function(response){
+							aq.results = response.data.results;
+							var temp;
+							markerDel();
+							for(var i =0; i < aq.results.length; i++){
+								temp = L.marker([aq.results[i].coordinates.latitude,aq.results[i].coordinates.longitude]).addTo(mymap);
+
+								var toPop = "";
+
+								for(var j = 0; j < aq.results[i].measurements.length; j++) {
+
+									toPop = toPop+ aq.results[i].measurements[j].parameter.toString() +" = "+ aq.results[i].measurements[j].value.toString()+", ";
+
+								}
+								toPop = toPop.slice(0, -2);
+								temp.bindPopup(toPop);
+								temp.on('mouseover', function (e) {
+									 this.openPopup();
+								});
+								temp.on('mouseout', function (e) {
+									this.closePopup();
+								});
+								marker.push(temp);
+							}
+						})
+						.catch(function (error) {
+							console.log(error);
+					});
+				},
+				filter(){
+					var southEast = mymap.getBounds().getSouthEast();
+					var northWest = mymap.getBounds().getNorthWest();
+					var distance = southEast.distanceTo(northWest);
+					var radius = distance / 2;
+					coord = coord.replace(/L|a|t|n|g|(|)/gi, '').replace(/[()]/g, '');
+					if(this.lowamount == '' && this.upamount == '' && this.fromdate == '' && this.todate == '')
+					{
+						this.$http
+							.get('https://api.openaq.org/v1/latest?coordinates=' + coord + '&radius=' + radius + '&parameter=' + this.particle)
+							.then(function(response){
+							aq.results = response.data.results;
+							var temp;
+							markerDel();
+							for(var i =0; i < aq.results.length; i++){
+								temp = L.marker([aq.results[i].coordinates.latitude,aq.results[i].coordinates.longitude]).addTo(mymap);
+
+								var toPop = "";
+
+								for(var j = 0; j < aq.results[i].measurements.length; j++) {
+
+									toPop = toPop+ aq.results[i].measurements[j].parameter.toString() +" = "+ aq.results[i].measurements[j].value.toString()+", ";
+
+								}
+								toPop = toPop.slice(0, -2);
+								temp.bindPopup(toPop);
+								temp.on('mouseover', function (e) {
+									 this.openPopup();
+								});
+								temp.on('mouseout', function (e) {
+									this.closePopup();
+								});
+								marker.push(temp);
+							}
+							})
+							.catch(function (error) {
+							console.log(error);
+							});
+					}
+					else
+					{
+
+						this.$http
+							.get('https://api.openaq.org/v1/measurements?coordinates=' + coord + '&radius=' + radius + '&parameter=' + this.particle +
+							'&value_from=' + this.lowamount + '&value_to=' + this.upamount + '&date_from=' + this.fromdate + '&date_to=' + this.todate)
+							.then(function(response){
+							aq.results = response.data.results;
+							var temp;
+							markerDel();
+							for(var i =0; i < aq.results.length; i++)
+							{
+								temp = L.marker([aq.results[i].coordinates.latitude,aq.results[i].coordinates.longitude]).addTo(mymap);
+								var toPop = "";
+								for(var j = 0; j < aq.results[i].measurements.length; j++)
+								{
+									toPop = toPop+ aq.results[i].measurements[j].parameter.toString() +" = "+ aq.results[i].measurements[j].value.toString()+", ";
+								}
+								toPop = toPop.slice(0, -2);
+								temp.bindPopup(toPop);
+								temp.on('mouseover', function (e){
+									 this.openPopup();
+								});
+								temp.on('mouseout', function (e){
+									this.closePopup();
+								});
+								marker.push(temp);
+							}
+							})
+							.catch(function (error) {
+							console.log(error);
+							});
+					}
+
+				}
+			}
+        })
+		</script>
+	</body>
+</html>
